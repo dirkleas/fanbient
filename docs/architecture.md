@@ -41,15 +41,24 @@ fan via MQTT-controlled smart switch.
           │ AC Power
           ▼
    ┌──────────────┐
-   │     Fan      │ (Noctua NF-A14/A20 or AC fan)
+   │     Fan      │ (blower / inline / axial — see hardware.md)
+   │ on Triad     │ (Triad Orbit armature + oscillation motor)
+   │ Orbit mount  │
    └──────────────┘
 ```
 
 ## Data Flow
 
-1. **Audio path**: Wireless mic TX → USB audio interface → RPi5 → sounddevice
-   captures 16kHz mono stream → 2-3 second chunks → librosa feature extraction
-   (MFCCs, spectral centroid, RMS) → sklearn classifier → panting confidence score
+1. **Audio path**: Hollyland Lark M2 TX (on [Triad Orbit](https://www.triad-orbit.com/) armature) →
+   USB-C RX direct to RPi5 (UAC class-compliant, 24-bit/48kHz) →
+   [SoX](https://sox.sourceforge.net/) `rec` captures and resamples to 16kHz mono.
+   SoX `silence` effect gates on configurable amplitude/duration thresholds —
+   only segments exceeding the threshold are serialized (dead air and ambient
+   noise below threshold are discarded before Python ever sees them). Emitted
+   segments are chunked into 2-3s WAV files or piped as raw audio →
+   Python reads chunks as numpy arrays → librosa feature extraction
+   (MFCCs, spectral centroid, RMS) → sklearn classifier → panting confidence
+   score. [FFmpeg](https://ffmpeg.org/) available for format conversion as needed.
 
 2. **Temperature path**: Apple Watch → iOS Sensor Logger app → HTTP POST to
    RPi5 receiver → parse body temp → compare against thresholds with deadband
@@ -68,7 +77,7 @@ fanbient/
 ├── config.py              # Pydantic settings (thresholds, MQTT, timings)
 ├── audio/
 │   ├── __init__.py
-│   ├── capture.py         # Continuous audio stream → chunked numpy arrays
+│   ├── capture.py         # SoX/FFmpeg subprocess → chunked numpy arrays
 │   └── classifier.py      # T1 spectral panting detection (librosa + sklearn)
 ├── control/
 │   ├── __init__.py

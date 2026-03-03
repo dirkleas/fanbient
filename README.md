@@ -9,9 +9,9 @@ override.
 
 Two trigger modes feed a shared fan control state machine:
 
-- **Sound trigger** — wireless mic near the dog's bed captures audio; spectral
+- **Sound trigger** — wireless mic ([Hollyland Lark M2](https://www.hollyland.com/product/lark-m2) or [DJI Mic 2](https://store.dji.com/product/dji-mic-2)) near the dog's bed captures audio; spectral
   analysis detects panting and turns the fan on automatically
-- **Temperature trigger** — Apple Watch body temp (via iOS Sensor Logger) or a
+- **Temperature trigger** — [Apple Watch](https://www.apple.com/apple-watch/) body temp (via [Sensor Logger](https://apps.apple.com/app/sensor-logger/id1531582925)) or a
   thermal imaging camera detects elevated temperature and triggers the fan
 
 When the trigger clears, the fan enters a configurable cooldown period before
@@ -94,7 +94,7 @@ fanbient/
   config.py           # pydantic settings (env vars: FANBIENT_*)
   api.py              # FastAPI REST wrapper
   audio/
-    capture.py        # sounddevice stream → chunked numpy arrays
+    capture.py        # SoX/FFmpeg subprocess → chunked numpy arrays
     classifier.py     # T1 panting detection (librosa + sklearn)
   control/
     state_machine.py  # IDLE → FAN_ON → COOLDOWN
@@ -110,10 +110,17 @@ it can be driven by the CLI, FastAPI, MCP, or MQTT commands.
 
 ## Hardware
 
-Minimal PoC (~$115-155): RPi5 + USB mic + smart plug + PC fan
+Minimal PoC (~$115-155): [RPi5](https://www.raspberrypi.com/products/raspberry-pi-5/) + USB mic + smart plug + fan
+
+Supports AC or battery power — [Milwaukee M18](https://www.milwaukeetool.com/products/48-11-1850)
+batteries via dock adapter for portable deployment, or USB-C PD power banks.
 
 See [docs/hardware.md](docs/hardware.md) for the full BOM including wireless
-mic kits, thermal cameras, and extension components.
+mic kits, thermal cameras, battery power options, extension components, and a
+[fan design rationale](docs/hardware.md#fan-design-rationale) comparing axial
+PC fans, DC centrifugal blowers, inline duct fans, and mini air movers — with
+CFM targets for each persona and directional actuation via oscillation motors
+or servo pan-tilt.
 
 ## Configuration
 
@@ -129,7 +136,8 @@ MQTT topic schema is documented in [docs/mqtt-schema.md](docs/mqtt-schema.md).
   homelab LM (T2) to cloud frontier LLM (T3) for edge cases
 - **Temporal scheduling** — time-based rules and sleep schedule awareness
 - **Ambient extensions** — aromatherapy, lighting, sleep sounds via MQTT
-- **Articulating armature** — motorized fan positioning with auto-stow
+- **[Triad Orbit](https://www.triad-orbit.com/) armatures** — modular adjustable stands, booms, and adapters for fan/mic/sensor positioning with auto-stow potential
+- **Directional actuation** — oscillation motors or servo pan-tilt for automated fan sweep between zones
 - **Multi-room support** — zone-based fan control across rooms
 - **PWM speed control** — variable fan speed instead of on/off
 

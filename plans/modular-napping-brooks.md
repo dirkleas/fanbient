@@ -35,25 +35,27 @@ PoC, followed by Leigh's temperature trigger, then extensions.
 ### Core Compute & Control
 | Component | Example | Est. Cost | Notes |
 |-----------|---------|-----------|-------|
-| SBC | Raspberry Pi 5 (4GB or 8GB) | $60-80 | Main compute, MQTT broker, audio processing |
-| Microcontroller | M5Stack Core2 or AtomS3 | $20-50 | Optional local sensor hub, display, or relay control |
+| SBC | [Raspberry Pi 5 (4GB or 8GB)](https://www.raspberrypi.com/products/raspberry-pi-5/) | $60-80 | Main compute, MQTT broker, audio processing |
+| Microcontroller | [M5Stack Core2](https://shop.m5stack.com/products/m5stack-core2-esp32-iot-development-kit) or [AtomS3](https://shop.m5stack.com/products/atoms3) | $20-50 | Optional local sensor hub, display, or relay control |
 | MicroSD card | 64GB A2 class | $10 | RPi5 boot/storage |
-| Power supply (RPi) | Official RPi5 27W USB-C PSU | $12 | |
+| Power supply (RPi) | [Official RPi5 27W USB-C PSU](https://www.raspberrypi.com/products/27w-power-supply/) | $12 | |
 
 ### Audio Capture
 | Component | Example | Est. Cost | Notes |
 |-----------|---------|-----------|-------|
-| Wireless mic kit | Hollyland Lark M2 or DJI Mic 2 | $150-300 | Clip-on TX near Tiggy's bed, RX to RPi |
-| USB audio interface | Budget USB DAC (e.g. Sabrent) | $8-15 | RX 3.5mm → USB for RPi input |
+| Wireless mic kit | [Hollyland Lark M2 (USB-C)](https://www.hollyland.com/product/lark-m2) | $150-200 | TX clips near Tiggy's bed; USB-C RX plugs directly into RPi5 (UAC, 24-bit/48kHz — no audio interface needed); mount via [Triad Orbit](https://www.triad-orbit.com/) armature |
+| _Alt: Wireless mic_ | _[DJI Mic 2](https://store.dji.com/product/dji-mic-2)_ | _$200-300_ | _USB-C RX option also available_ |
 | _Alt: USB mic_ | _Cheap USB condenser_ | _$15-30_ | _Simpler but wired, shorter range_ |
 
 ### Fan & Actuation
 | Component | Example | Est. Cost | Notes |
 |-----------|---------|-----------|-------|
-| Fan | Noctua NF-A14 (140mm) or NF-A20 (200mm) | $25-35 | Quiet, PWM-capable, 12V |
-| Smart plug (MQTT) | Sonoff S31 (Tasmota flashed) or Shelly Plug S | $12-20 | MQTT-native or flashable; controls fan power |
-| _Alt: PWM fan control_ | _M5Stack relay/MOSFET + 12V PSU_ | _$15-25_ | _Variable speed vs on/off; more wiring_ |
+| Fan | Multiple types — see [hardware.md fan rationale](../docs/hardware.md#fan-design-rationale) | $15-65 | Axial, centrifugal blower, inline duct, or air mover; mount via [Triad Orbit](https://www.triad-orbit.com/) armature |
+| Smart plug (MQTT) | [Sonoff S31 (Tasmota)](https://sonoff.tech/product/smart-plugs/s31/) or [Shelly Plug S](https://www.shelly.com/en-us/products/shop/shelly-plus-plug-s-1) | $12-20 | MQTT-native or flashable; controls fan power |
+| _Alt: PWM fan control_ | _[M5Stack](https://shop.m5stack.com/) relay/MOSFET + 12V PSU_ | _$15-25_ | _Variable speed vs on/off; more wiring_ |
 | 12V DC PSU | Barrel jack PSU for PC fan | $8-12 | Only if not using smart plug AC fan |
+| _Alt: Battery power_ | _[Milwaukee M18](https://www.milwaukeetool.com/products/48-11-1850) + [dock adapter](https://www.amazon.com/Milwaukee-Connector-Building-projects-Robotics/dp/B08KNN4T3M) + 18V→12V step-down_ | _$25-35_ | _Portable; hot-swap batteries for overnight runtime_ |
+| _Alt: USB-C PD bank_ | _65W+ USB-C PD power bank (e.g. [Anker](https://www.anker.com/collections/portable-chargers))_ | _$30-60_ | _RPi5-only portable power; ~3-5 hrs_ |
 
 ### Networking & MQTT
 | Component | Example | Est. Cost | Notes |
@@ -64,14 +66,15 @@ PoC, followed by Leigh's temperature trigger, then extensions.
 ### Temperature Sensing (Phase 2)
 | Component | Example | Est. Cost | Notes |
 |-----------|---------|-----------|-------|
-| Apple Watch | Already owned | $0 | Wrist temp during sleep |
-| iOS Sensor Logger | App (free/paid) | $0-5 | Exports sensor data via HTTP/push |
+| Apple Watch | [Apple Watch](https://www.apple.com/apple-watch/) (already owned) | $0 | Wrist temp during sleep |
+| iOS Sensor Logger | [Sensor Logger](https://apps.apple.com/app/sensor-logger/id1531582925) (free/paid) | $0-5 | Exports sensor data via HTTP/push |
 
 ### Optional / Extensions
 | Component | Example | Est. Cost | Notes |
 |-----------|---------|-----------|-------|
-| Articulating arm | Monitor arm or gooseneck clamp | $15-30 | Fan positioning |
-| LED strip | WS2812B or similar | $10 | Ambient lighting via MQTT |
+| Positioning armature | [Triad Orbit](https://www.triad-orbit.com/) stands, booms, adapters | $80-200 | Modular mounting for fan, mic, sensors |
+| Directional actuation | Oscillation motor or servo pan-tilt — see [hardware.md](../docs/hardware.md#directional-actuation) | $5-50 | Automated fan sweep between Tiggy/Leigh zones |
+| LED strip | [WS2812B (Adafruit NeoPixel)](https://www.adafruit.com/category/168) | $10 | Ambient lighting via MQTT |
 | Aroma diffuser | USB mini diffuser | $15 | MQTT-switched |
 | Ambient speaker | Bluetooth mini speaker | $15-25 | Sleep sounds |
 
@@ -104,9 +107,13 @@ PoC, followed by Leigh's temperature trigger, then extensions.
 **Goal:** Detect pug panting from audio → actuate fan via MQTT smart switch.
 
 ### 1a. Audio Capture Pipeline
-- Wireless mic → RPi5 audio input (USB/line-in)
-- Continuous audio stream capture (PyAudio or sounddevice)
-- Chunked processing (e.g. 2-3 second windows)
+- Hollyland Lark M2 TX → USB-C RX plugged directly into RPi5 (UAC class-compliant, no audio interface needed)
+- [SoX](https://sox.sourceforge.net/) `rec` captures from USB audio device; `silence` effect gates on
+  configurable amplitude/duration threshold — only serializes segments with
+  actual sound activity (dead air never reaches Python); resamples 48kHz → 16kHz mono
+- [FFmpeg](https://ffmpeg.org/) for format conversion if needed (e.g. training data normalization)
+- Python subprocess reads threshold-gated chunks as numpy arrays for classifier
+- Chunked processing (e.g. 2-3 second windows of above-threshold audio)
 
 ### 1b. Panting Detection — Tiered Classification
 Three tiers, build bottom-up:
@@ -144,7 +151,7 @@ T1 approach:
 - `tests/` — unit tests for classifier and state machine
 
 ### Dependencies to add
-- `sounddevice` or `pyaudio` — audio capture
+- `sox` / `ffmpeg` — system packages for audio capture, resample, format conversion
 - `librosa` — audio feature extraction
 - `numpy` — array ops
 - `scikit-learn` — simple classifier
@@ -177,7 +184,8 @@ T1 approach:
 
 - Temporal scheduling (time-based rules, sleep schedule awareness)
 - Aromatherapy, lighting, ambient sound via MQTT
-- Articulating armature for positioning
+- [Triad Orbit](https://www.triad-orbit.com/) modular armatures for positioning
+- Directional actuation — oscillation motors or servo pan-tilt for fan sweep
 - T2/T3 audio classification tiers
 - Auto-positioning and stow-away
 - Multi-room support
