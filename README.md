@@ -147,3 +147,4 @@ MQTT topic schema is documented in [docs/mqtt-schema.md](docs/mqtt-schema.md).
 - [Hardware BOM](docs/hardware.md) — components, wiring, thermal camera options
 - [MQTT Schema](docs/mqtt-schema.md) — topic naming, payloads, QoS
 - [Seed Thoughts](SEEDS.md) — original brainstorming notes
+- Gemini Preliminary [Audit](gemini_audit.md) ([plan](gemini_audit_plan.md))
